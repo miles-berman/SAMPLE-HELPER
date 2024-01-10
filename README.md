@@ -24,5 +24,5 @@ pip install pydub simpleaudio numpy
 ## Quick Start
 
 1. Clone the repository or download the source code.
-2. Install dependencies: pip install pydub simpleaudio numpy.
+2. Install dependencies
 3. Run the app: python main.py <audio_file_path> (replace <audio_file_path> with the path to your audio file).
