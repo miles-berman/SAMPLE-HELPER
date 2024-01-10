@@ -40,11 +40,14 @@ class Sample:
             self.original_audio = AudioSegment.from_wav(self.file_path)
         elif self.file_path.endswith('.mp3'):
             self.original_audio = AudioSegment.from_mp3(self.file_path)
+        elif self.file_path.endswith('.m4a'):
+            self.original_audio = AudioSegment.from_file(self.file_path)
         else:
             self.err = "Unsupported file format."
             return
 
-        self.audio = self.original_audio  
+        self.audio = self.original_audio
+
 
         self.sr = self.audio.frame_rate
         self.length_seconds = len(self.audio) / 1000.0
@@ -66,6 +69,8 @@ class Sample:
             audio_data = audio_data.astype(np.int16)
         elif self.audio.sample_width == 4:
             audio_data = audio_data.astype(np.int32)
+        else:
+            audio_data = audio_data.astype(np.int64)
 
         factor = 2 ** (16 - target_bit_depth) # bit depth math
         lowered_audio_data = (audio_data // factor) * factor
@@ -129,6 +134,23 @@ class Sample:
         audio_frames = audio_data.tobytes()
         self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, self.audio.sample_width, self.sr)
         self.play_obj.wait_done()
+
+
+    #UNTESTED
+    def set_volume(self, gain_db):
+        if self.audio:
+            self.audio += gain_db  # Increase or decrease the volume
+            self.update_audio()
+
+    def set_pan(self, pan):
+        if self.audio and self.audio.channels == 2:
+            left, right = self.audio.split_to_mono()
+            if pan < 0:
+                left += pan * -20  # Decrease left channel volume
+            else:
+                right += pan * 20  # Increase right channel volume
+            self.audio = AudioSegment.from_mono_audiosegments(left, right)
+            self.update_audio()
 
 
 
