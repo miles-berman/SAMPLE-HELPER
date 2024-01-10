@@ -18,4 +18,4 @@ Before running the Python Audio Sampler, you need to have Python installed on yo
 You can install the required libraries using pip:
 
 ```bash
-pip install pydub simpleaudio
+pip install pydub simpleaudio numpy
