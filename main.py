@@ -1,4 +1,5 @@
 # main.py
+# tester for Sampler class.
 from SamplerClass import Sample
 import sys
 
