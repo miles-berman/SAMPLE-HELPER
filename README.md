@@ -9,6 +9,7 @@ The app allows users to load audio files (WAV and MP3), and manipulate the audio
 - Adjust the bit depth and sample rate of the audio
 - Change the pitch of the audio in semitones
 - Real-time audio manipulation with immediate feedback
+- Save manipluations in a new file
 
 ## Prerequisites
 
