@@ -1,3 +1,5 @@
+# 1/9/2024
+
 import tkinter as tk
 from tkinter import filedialog, LabelFrame
 from SamplerClass import Sample 
