@@ -13,6 +13,7 @@ import simpleaudio as sa
 # Sample Class
 #-----------------
 # Class for wav and mp3 files. Allows sample rate, bit depth, and pitch changes. Stores Metadata as well
+
 class Sample:
     def __init__(self, file_path):
         self.original_audio = None  # original, unaltered audio
