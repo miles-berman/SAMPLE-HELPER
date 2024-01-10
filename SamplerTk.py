@@ -16,20 +16,23 @@ class SamplerApp(tk.Tk):
         super().__init__()
         self.title("SMPL-HLPR")
         self.geometry("600x500")
-        self.resizable(False, False)  # Prevent window from being resizable
+        self.resizable(False, False)  # prevent window from being resizable
 
         self.sample = None
-        self.last_pitch_value = 0  # To track the last pitch value
+        self.last_pitch_value = 0  # track the last pitch, volume, & pan
+        self.last_volume_value = 0
+        self.last_pan_value = 0
+
 
         # LEFT
         self.left_panel = LabelFrame(self, text="File Info", width=220, height=430)
-        self.left_panel.pack_propagate(False)  # Prevent resizing of left_panel
+        self.left_panel.pack_propagate(False)  # prevent resizing of left_panel
         self.left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 
 
         # RIGHT
         self.right_panel = LabelFrame(self, text="Controls", width=380, height=430)
-        self.right_panel.pack_propagate(False)  # Prevent resizing of right_panel
+        self.right_panel.pack_propagate(False)  # prevent resizing of right_panel
         self.right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Screen
@@ -47,12 +50,12 @@ class SamplerApp(tk.Tk):
 
         # Bit Depth
         self.bit_depth_slider = tk.Scale(self.right_panel, from_=4, to=16, orient=tk.HORIZONTAL, label="Bit Depth")
-        self.bit_depth_slider.set(16)  # Default value
+        self.bit_depth_slider.set(16)  # default value
         self.bit_depth_slider.pack(pady=10)
 
         # Sample Rate
         self.sample_rate_slider = tk.Scale(self.right_panel, from_=8000, to=48000, orient=tk.HORIZONTAL, label="Sample Rate", resolution=1000)
-        self.sample_rate_slider.set(44100)  # Default value
+        self.sample_rate_slider.set(44100)  # default value
         self.sample_rate_slider.pack(pady=10)
 
         # Pitch 
@@ -101,14 +104,19 @@ class SamplerApp(tk.Tk):
     # Volume Change
     def apply_volume_change(self):
         if self.sample:
-            volume_level = self.volume_slider.get()
-            threading.Thread(target=self.sample.set_volume, args=(volume_level,), daemon=True).start()
+            new_volume = self.volume_slider.get()
+            volume_change = new_volume - self.last_volume_value
+            self.last_volume_value = new_volume  # update last volume value
+            threading.Thread(target=self.sample.set_volume, args=(volume_change,), daemon=True).start()
+
 
     # Pan Change
     def apply_pan_change(self):
         if self.sample:
-            pan_level = self.pan_slider.get()
-            threading.Thread(target=self.sample.set_pan, args=(pan_level,), daemon=True).start()
+            new_pan = self.pan_slider.get()
+            pan_change = new_pan - self.last_pan_value
+            self.last_pan_value = new_pan  # update last pan value
+            threading.Thread(target=self.sample.set_pan, args=(pan_change,), daemon=True).start()
 
 
     # Sample Changes

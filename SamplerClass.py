@@ -143,17 +143,17 @@ class Sample:
     # set_pan
     # Sets pan by decreasing opposite channel volume. 
     def set_pan(self, pan):
-    if self.audio and self.audio.channels == 2:
-        left, right = self.audio.split_to_mono()
-        
-        # Pan range: -1.0 (full left) to 1.0 (full right)
-        if pan < 0:  # Pan left
-            right = right - abs(pan) * 20 # reduce right channel volume
-        elif pan > 0:  # Pan right
-            left = left - abs(pan) * 20 # reduce left channel volume
+        if self.audio and self.audio.channels == 2:
+            left, right = self.audio.split_to_mono()
+            
+            # Pan range: -1.0 (full left) to 1.0 (full right)
+            if pan < 0:  # Pan left
+                right = right - abs(pan) * 20 # reduce right channel volume
+            elif pan > 0:  # Pan right
+                left = left - abs(pan) * 20 # reduce left channel volume
 
-        self.audio = AudioSegment.from_mono_audiosegments(left, right)
-        self.update_audio()
+            self.audio = AudioSegment.from_mono_audiosegments(left, right)
+            self.update_audio()
 
 
     
@@ -195,46 +195,3 @@ class Sample:
         self.update_audio()
 
 
-def main():
-    file_path = "/Volumes/Drive 2/Samples/Kits/British Music Library - A Good Days Dig/Fills/Lil_Fill.wav"  # Replace with the path to your audio file
-    test_sample = Sample(file_path)
-
-    if test_sample.err:
-        print("Error loading file:", test_sample.err)
-        return
-
-    # Display file info
-    print("Sample Rate:", test_sample.sr)
-    print("Channels:", test_sample.channels)
-    print("Length (seconds):", test_sample.length_seconds)
-
-    # Test playback
-    print("Playing original audio...")
-    test_sample.play_audio()
-    time.sleep(3)  # Let it play for 3 seconds
-    test_sample.stop_audio()
-
-    # Test pan
-    print("Panning left...")
-    test_sample.set_pan(-1)  # Fully to the left
-    test_sample.play_audio()
-    time.sleep(3)
-    test_sample.stop_audio()
-
-    print("Panning right...")
-    test_sample.set_pan(1)  # Fully to the right
-    test_sample.play_audio()
-    time.sleep(3)
-    test_sample.stop_audio()
-
-    # Reset to center
-    print("Panning to center...")
-    test_sample.set_pan(0)
-    test_sample.play_audio()
-    time.sleep(3)
-    test_sample.stop_audio()
-
-    # ... [rest of your code] ...
-
-if __name__ == "__main__":
-    main()
