@@ -8,9 +8,9 @@ import time
 
 class SamplerApp(tk.Tk):
     
-    #----------------
-    # UI
-    #----------------
+#----------------
+# UI
+#----------------
     
     def __init__(self):
         super().__init__()
@@ -59,9 +59,9 @@ class SamplerApp(tk.Tk):
         self.sample_rate_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
         self.pitch_slider.bind("<ButtonRelease-1>", lambda event: self.apply_pitch_change())
 
-    #----------------
-    # Backend
-    #----------------
+#----------------
+# Backend
+#----------------
 
     # Load
     def load_audio(self):
