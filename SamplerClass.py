@@ -29,6 +29,10 @@ class Sample:
 
         self.err = None # error handler 
 
+#-----------------
+# Load & Save
+#-----------------
+    
     # read_audio
     # Reads & sets info from audoi file (wav + mp3)
     def read_audio(self):
@@ -59,7 +63,59 @@ class Sample:
         if self.play_thread and self.play_thread.is_alive():
             self.stop_audio()
             self.play_audio()
+            
+    def save_audio(self, save_path):
+        if self.audio:
+            file_format = 'wav' if save_path.endswith('.wav') else 'mp3'
+            
+            if not file_format:
+                self.err = "Unsupported file format for saving."
+                return
+            self.audio.export(save_path, format=file_format)
+        else:
+            self.err = "No audio loaded to save."
+            
+#-----------------
+# Playback
+#-----------------    
+    
+    # play_audio
+    # Stops audio then plays from beginning
+    def play_audio(self):
+        self.stop_audio()  
+        self.play_thread = threading.Thread(target=self._play_audio_thread)
+        self.play_thread.start()
 
+    # stop_audio
+    # Stops play thread completely
+    def stop_audio(self):
+        if self.play_obj and self.play_obj.is_playing():
+            self.play_obj.stop()
+        if self.play_thread and self.play_thread.is_alive():
+            self.play_thread.join()
+
+
+    
+
+
+    # _play_audio_thread
+    # private thread for audio playback
+    def _play_audio_thread(self):
+        audio_data = np.array(self.audio.get_array_of_samples())
+        if self.audio.sample_width == 2:
+            audio_data = audio_data.astype(np.int16)
+        elif self.audio.sample_width == 4:
+            audio_data = audio_data.astype(np.int32)
+
+        audio_frames = audio_data.tobytes()
+        self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, self.audio.sample_width, self.sr)
+        self.play_obj.wait_done()
+
+    
+#-----------------
+# Effects
+#-----------------
+    
     # lower_bd
     # Resamples & lowers bit depth
     def lower_bd(self, target_bit_depth):
@@ -93,47 +149,7 @@ class Sample:
         self.audio = shifted_audio.set_frame_rate(self.audio.frame_rate)
         self.update_audio()
 
-
-    # play_audio
-    # Stops audio then plays from beginning
-    def play_audio(self):
-        self.stop_audio()  
-        self.play_thread = threading.Thread(target=self._play_audio_thread)
-        self.play_thread.start()
-
-    # stop_audio
-    # Stops play thread completely
-    def stop_audio(self):
-        if self.play_obj and self.play_obj.is_playing():
-            self.play_obj.stop()
-        if self.play_thread and self.play_thread.is_alive():
-            self.play_thread.join()
-
-
-    def save_audio(self, save_path):
-        if self.audio:
-            file_format = 'wav' if save_path.endswith('.wav') else 'mp3'
-            
-            if not file_format:
-                self.err = "Unsupported file format for saving."
-                return
-            self.audio.export(save_path, format=file_format)
-        else:
-            self.err = "No audio loaded to save."
-
-
-    # _play_audio_thread
-    # private thread for audio playback
-    def _play_audio_thread(self):
-        audio_data = np.array(self.audio.get_array_of_samples())
-        if self.audio.sample_width == 2:
-            audio_data = audio_data.astype(np.int16)
-        elif self.audio.sample_width == 4:
-            audio_data = audio_data.astype(np.int32)
-
-        audio_frames = audio_data.tobytes()
-        self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, self.audio.sample_width, self.sr)
-        self.play_obj.wait_done()
+    
 
 
     #UNTESTED
