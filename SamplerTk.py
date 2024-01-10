@@ -77,6 +77,26 @@ class SamplerApp(tk.Tk):
         self.volume_slider.bind("<ButtonRelease-1>", lambda event: self.apply_volume_change())
         self.pan_slider.bind("<ButtonRelease-1>", lambda event: self.apply_pan_change())
 
+    def reset_UI(self):
+        # update track info label if a file is loaded
+        if self.sample and self.sample.file_path:
+            file_path = self.sample.file_path
+            self.track_info_label.config(text=f"{file_path.split('/')[-1]}\nSample Rate: {self.sample.sr} Hz\nLength: {self.sample.length_seconds} seconds\nChannels: {self.sample.channels}")
+        else:
+            self.track_info_label.config(text="No file loaded")
+
+        # Reset sliders to default values
+        self.bit_depth_slider.set(16)
+        self.sample_rate_slider.set(44100)
+        self.pitch_slider.set(0)
+        self.volume_slider.set(0)
+        self.pan_slider.set(0)
+
+        # Reset last values
+        self.last_pitch_value = 0
+        self.last_volume_value = 0
+        self.last_pan_value = 0
+
 
 #----------------
 # Backend
@@ -89,8 +109,8 @@ class SamplerApp(tk.Tk):
         file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")])
         if file_path:
             self.sample = Sample(file_path)
-            # Update track info label
-            self.track_info_label.config(text=f"{file_path.split('/')[-1]}\nSample Rate: {self.sample.sr} Hz\nLength: {self.sample.length_seconds} seconds\nChannels: {self.sample.channels}")
+            self.reset_UI()
+            
 
     # Playback
     def play_audio(self):
