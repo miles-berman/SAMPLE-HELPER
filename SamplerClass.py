@@ -3,16 +3,19 @@
 import os
 import threading
 import time
+import io
 
 from pydub import AudioSegment
 import numpy as np
 import simpleaudio as sa
+import wave
+
 
 
 #-----------------
 # Sample Class
 #-----------------
-# Class for wav and mp3 files. Allows sample rate, bit depth, and pitch changes. Stores Metadata as well
+# Class for wav, mp3, & m4a files. Allows sample rate, bit depth, and pitch changes. Stores Metadata as well
 
 class Sample:
     def __init__(self, file_path):
@@ -35,14 +38,17 @@ class Sample:
 #-----------------
     
     # read_audio
-    # Reads & sets info from audoi file (wav + mp3)
+    # Reads & sets info from audoi file (wav, mp3, & m4a)
     def read_audio(self):
         if not os.path.exists(self.file_path):
             self.err = "File does not exist."
             return
 
         if self.file_path.endswith('.wav'):
-            self.original_audio = AudioSegment.from_wav(self.file_path)
+            if self._is_24bit_wav(self.file_path):
+                self._convert_24bit_16bit()
+            else:
+                self.original_audio = AudioSegment.from_wav(self.file_path)
         elif self.file_path.endswith('.mp3'):
             self.original_audio = AudioSegment.from_mp3(self.file_path)
         elif self.file_path.endswith('.m4a'):
@@ -53,10 +59,27 @@ class Sample:
 
         self.audio = self.original_audio
 
-
         self.sr = self.audio.frame_rate
         self.length_seconds = len(self.audio) / 1000.0
         self.channels = 'Mono' if self.audio.channels == 1 else 'Stereo'
+
+    # _is_24bit_wav
+    # Checks if the WAV file at the given file path is 24-bit.
+    def _is_24bit_wav(self, file_path):
+        with wave.open(file_path, 'r') as wav_file:
+            sample_width = wav_file.getsampwidth()
+        return sample_width == 3
+
+    # _convert_24bit_16bit
+    # Converts a 24-bit WAV file to 16-bit. Conversion is necessary, 24-bit audio not supported natively.
+    def _convert_24bit_16bit(self):
+        audio = AudioSegment.from_file(self.file_path, format='wav')
+
+        buffer = io.BytesIO()
+        audio.export(buffer, format="wav", parameters=["-acodec", "pcm_s16le"])
+        buffer.seek(0)
+
+        self.original_audio = AudioSegment.from_file(buffer, format="wav")
 
     # update_audio
     # Update main audio with current changes and restart if playing
@@ -96,21 +119,42 @@ class Sample:
             self.play_thread.join()
 
 
-    
-
-
     # _play_audio_thread
-    # private thread for audio playback
+    # Private thread for audio playback
     def _play_audio_thread(self):
         audio_data = np.array(self.audio.get_array_of_samples())
+        
         if self.audio.sample_width == 2:
             audio_data = audio_data.astype(np.int16)
         elif self.audio.sample_width == 4:
             audio_data = audio_data.astype(np.int32)
 
         audio_frames = audio_data.tobytes()
-        self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, self.audio.sample_width, self.sr)
+        self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, 2, self.sr)  # Using 2 bytes per sample for playback
         self.play_obj.wait_done()
+
+    # set_volume
+    # Sets volume to given db level
+    def set_volume(self, gain_db):
+        if self.audio:
+            self.audio += gain_db 
+            self.update_audio()
+
+    # set_pan
+    # Sets pan by decreasing opposite channel volume. 
+    def set_pan(self, pan):
+    if self.audio and self.audio.channels == 2:
+        left, right = self.audio.split_to_mono()
+        
+        # Pan range: -1.0 (full left) to 1.0 (full right)
+        if pan < 0:  # Pan left
+            right = right - abs(pan) * 20 # reduce right channel volume
+        elif pan > 0:  # Pan right
+            left = left - abs(pan) * 20 # reduce left channel volume
+
+        self.audio = AudioSegment.from_mono_audiosegments(left, right)
+        self.update_audio()
+
 
     
 #-----------------
@@ -150,24 +194,47 @@ class Sample:
         self.audio = shifted_audio.set_frame_rate(self.audio.frame_rate)
         self.update_audio()
 
-    
 
+def main():
+    file_path = "/Volumes/Drive 2/Samples/Kits/British Music Library - A Good Days Dig/Fills/Lil_Fill.wav"  # Replace with the path to your audio file
+    test_sample = Sample(file_path)
 
-    #UNTESTED
-    def set_volume(self, gain_db):
-        if self.audio:
-            self.audio += gain_db  # Increase or decrease the volume
-            self.update_audio()
+    if test_sample.err:
+        print("Error loading file:", test_sample.err)
+        return
 
-    def set_pan(self, pan):
-        if self.audio and self.audio.channels == 2:
-            left, right = self.audio.split_to_mono()
-            if pan < 0:
-                left += pan * -20  # Decrease left channel volume
-            else:
-                right += pan * 20  # Increase right channel volume
-            self.audio = AudioSegment.from_mono_audiosegments(left, right)
-            self.update_audio()
+    # Display file info
+    print("Sample Rate:", test_sample.sr)
+    print("Channels:", test_sample.channels)
+    print("Length (seconds):", test_sample.length_seconds)
 
+    # Test playback
+    print("Playing original audio...")
+    test_sample.play_audio()
+    time.sleep(3)  # Let it play for 3 seconds
+    test_sample.stop_audio()
 
+    # Test pan
+    print("Panning left...")
+    test_sample.set_pan(-1)  # Fully to the left
+    test_sample.play_audio()
+    time.sleep(3)
+    test_sample.stop_audio()
 
+    print("Panning right...")
+    test_sample.set_pan(1)  # Fully to the right
+    test_sample.play_audio()
+    time.sleep(3)
+    test_sample.stop_audio()
+
+    # Reset to center
+    print("Panning to center...")
+    test_sample.set_pan(0)
+    test_sample.play_audio()
+    time.sleep(3)
+    test_sample.stop_audio()
+
+    # ... [rest of your code] ...
+
+if __name__ == "__main__":
+    main()
