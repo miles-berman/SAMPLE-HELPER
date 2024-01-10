@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, LabelFrame
-from sampler import Sample 
+from SamplerClass import Sample 
 import threading
 import time
 
