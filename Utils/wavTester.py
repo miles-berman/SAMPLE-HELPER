@@ -1,4 +1,4 @@
-# main.py
+# wavTester.py
 # tester for wav files for debugging
 
 import wave
