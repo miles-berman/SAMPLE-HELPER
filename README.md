@@ -25,9 +25,9 @@ pip install pydub simpleaudio numpy
 
 1. Clone the repository or download the source code.
 2. Install dependencies
-3. Simply run SamplerQt.py
+3. Simply run SamplerTk.py
    ```bash
-   python SamplerQt.py
+   python SamplerTk.py
 5. Or run the main.py:
    ```bash
    python main.py <audio_file_path> (replace <audio_file_path> with the path to your audio file).
