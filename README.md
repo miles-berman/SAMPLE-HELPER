@@ -1,16 +1,17 @@
 # SAMPLE HELPER
-A python "sampler" to change bit depth, sample rate, and pitch of wav &amp; mp3 files. 
-The app allows users to load audio files (WAV and MP3), and manipulate the audio in real-time. Users can adjust the bit depth, sample rate, and pitch of the audio, and apply these changes on the fly.
+A python "sampler" to change bit depth, sample rate, and pitch of audio files. 
+The app allows users to load audio files (WAV, MP3, & M4A), and manipulate the audio in real-time. Users can adjust the bit depth, sample rate, and pitch of the audio, and apply these changes on the fly.
 
 ## Features
 
-- Load WAV, MP3, & MP4 audio files
+- Load WAV, MP3, & M4A audio files
+- Export Manipulated samples
 - Play and pause audio playback
 - Adjust the bit depth and sample rate of the audio
 - Change the pitch of the audio in semitones
 - Real-time audio manipulation with immediate feedback
 - Save manipluations in a new file
-- Supports 
+- Supports 16, 24, and 32-bit samples
 
 ## Prerequisites
 
