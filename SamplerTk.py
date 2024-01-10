@@ -7,6 +7,11 @@ import threading
 import time
 
 class SamplerApp(tk.Tk):
+    
+    #----------------
+    # UI
+    #----------------
+    
     def __init__(self):
         super().__init__()
         self.title("SMPL-HLPR")
@@ -18,43 +23,47 @@ class SamplerApp(tk.Tk):
         self.left_panel = LabelFrame(self, text="File Info")
         self.left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 
-        # Track Info
+        # LEFT
         self.track_info_label = tk.Label(self.left_panel, text="No file loaded", justify=tk.LEFT)
         self.track_info_label.pack(pady=10)
 
-        # Load Button
         self.load_button = tk.Button(self.left_panel, text="Load Audio File", command=self.load_audio)
         self.load_button.pack(pady=10)
 
-        # Right Panel for Controls
+        # RIGHT
         self.right_panel = LabelFrame(self, text="Controls")
         self.right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Bit Depth Slider
+        # Bit Depth
         self.bit_depth_slider = tk.Scale(self.right_panel, from_=4, to=16, orient=tk.HORIZONTAL, label="Bit Depth")
         self.bit_depth_slider.set(16)  # Default value
         self.bit_depth_slider.pack(pady=10)
 
-        # Sample Rate Slider
+        # Sample Rate
         self.sample_rate_slider = tk.Scale(self.right_panel, from_=8000, to=48000, orient=tk.HORIZONTAL, label="Sample Rate", resolution=1000)
         self.sample_rate_slider.set(44100)  # Default value
         self.sample_rate_slider.pack(pady=10)
 
-        # Pitch Slider
+        # Pitch 
         self.pitch_slider = tk.Scale(self.right_panel, from_=-12, to=12, orient=tk.HORIZONTAL, label="Pitch (Semitones)")
         self.pitch_slider.pack(pady=10)
 
-        # Play and Stop Buttons
+        # Play & Stop
         self.play_button = tk.Button(self.right_panel, text="Play", command=self.play_audio)
         self.play_button.pack(pady=5)
         self.stop_button = tk.Button(self.right_panel, text="Stop", command=self.stop_audio)
         self.stop_button.pack(pady=5)
 
-        # Modify sliders to update on release
+        # Bind sliders
         self.bit_depth_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
         self.sample_rate_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
         self.pitch_slider.bind("<ButtonRelease-1>", lambda event: self.apply_pitch_change())
 
+    #----------------
+    # Backend
+    #----------------
+
+    # Load
     def load_audio(self):
         if self.sample:
             self.sample.stop_audio()
@@ -64,6 +73,7 @@ class SamplerApp(tk.Tk):
             # Update track info label
             self.track_info_label.config(text=f"Loaded: {file_path.split('/')[-1]}\nSample Rate: {self.sample.sr} Hz\nLength: {self.sample.length_seconds} seconds\nChannels: {self.sample.channels}")
 
+    # Playback
     def play_audio(self):
         if self.sample:
             threading.Thread(target=self.sample.play_audio, daemon=True).start()
@@ -72,9 +82,10 @@ class SamplerApp(tk.Tk):
         if self.sample:
             self.sample.stop_audio()
 
+    # Sample Changes
     def apply_changes(self):
         if self.sample:
-            threading.Thread(target=self.apply_audio_changes, daemon=True).start()
+            threading.Thread(target=self.changes_helper, daemon=True).start()
 
     def apply_pitch_change(self):
         time.sleep(0.1)
@@ -84,7 +95,7 @@ class SamplerApp(tk.Tk):
             self.last_pitch_value = new_pitch
             threading.Thread(target=self.sample.set_pitch, args=(pitch_change,), daemon=True).start()
 
-    def apply_audio_changes(self):
+    def changes_helper(self):
         bit_depth = self.bit_depth_slider.get()
         sample_rate = self.sample_rate_slider.get()
         time.sleep(0.1)
