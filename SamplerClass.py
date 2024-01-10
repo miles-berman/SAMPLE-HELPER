@@ -20,6 +20,7 @@ import wave
 class Sample:
     def __init__(self, file_path):
         self.original_audio = None  # original, unaltered audio
+        self.preMix_audio = None    # effected audio (pre-gain)
         self.audio = None           # currently modified audio
 
         self.file_path = file_path
@@ -38,7 +39,7 @@ class Sample:
 #-----------------
     
     # read_audio
-    # Reads & sets info from audoi file (wav, mp3, & m4a)
+    # Reads & sets info from audio file (wav, mp3, & m4a)
     def read_audio(self):
         if not os.path.exists(self.file_path):
             self.err = "File does not exist."
@@ -58,6 +59,7 @@ class Sample:
             return
 
         self.audio = self.original_audio
+        self.preMix_audio = self.audio
 
         self.sr = self.audio.frame_rate
         self.length_seconds = len(self.audio) / 1000.0
@@ -82,11 +84,9 @@ class Sample:
         self.original_audio = AudioSegment.from_file(buffer, format="wav")
 
     # update_audio
-    # Update main audio with current changes and restart if playing
+    # Stores effected audio for non-destructive volume & panning
     def update_audio(self):
-        if self.play_thread and self.play_thread.is_alive():
-            self.stop_audio()
-            self.play_audio()
+        self.preMix_audio = self.audio
             
     def save_audio(self, save_path):
         if self.audio:
@@ -136,14 +136,17 @@ class Sample:
     # set_volume
     # Sets volume to given db level
     def set_volume(self, gain_db):
-        if self.audio:
-            self.audio += gain_db 
-            self.update_audio()
+        if self.preMix_audio:
+            self.audio = self.preMix_audio
+            self.audio += gain_db
+
 
     # set_pan
     # Sets pan by decreasing opposite channel volume. 
     def set_pan(self, pan):
-        if self.audio and self.audio.channels == 2:
+        print("X")
+        if self.preMix_audio and self.preMix_audio.channels == 2:
+            self.audio = self.preMix_audio
             left, right = self.audio.split_to_mono()
             
             # Pan range: -1.0 (full left) to 1.0 (full right)
@@ -153,10 +156,7 @@ class Sample:
                 left = left - abs(pan) * 20 # reduce left channel volume
 
             self.audio = AudioSegment.from_mono_audiosegments(left, right)
-            self.update_audio()
 
-
-    
 #-----------------
 # Effects
 #-----------------
@@ -177,13 +177,13 @@ class Sample:
         lowered_audio_data = (audio_data // factor) * factor
 
         self.audio = self.original_audio._spawn(lowered_audio_data.tobytes())
-        #self.update_audio()
+        self.update_audio()
 
     # lower_sr
     # Resamples & lowers sample rate
     def lower_sr(self, target_sr):
         self.audio = self.audio.set_frame_rate(target_sr).set_frame_rate(self.sr) # easy sample rate change w/pydub
-        #self.update_audio()
+        self.update_audio()
 
 
     # set_pitch

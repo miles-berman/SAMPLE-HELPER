@@ -133,23 +133,24 @@ class SamplerApp(tk.Tk):
     def stop_audio(self):
         if self.sample:
             self.sample.stop_audio()
+        
 
     # Volume Change
     def apply_volume_change(self):
         if self.sample:
             new_volume = self.volume_slider.get()
-            volume_change = new_volume - self.last_volume_value
             self.last_volume_value = new_volume  # update last volume value
-            threading.Thread(target=self.sample.set_volume, args=(volume_change,), daemon=True).start()
+            threading.Thread(target=self.sample.set_volume, args=(new_volume,), daemon=True).start()
+            self.sample.play_audio()
 
 
     # Pan Change
     def apply_pan_change(self):
         if self.sample:
             new_pan = self.pan_slider.get()
-            pan_change = new_pan - self.last_pan_value
             self.last_pan_value = new_pan  # update last pan value
-            threading.Thread(target=self.sample.set_pan, args=(pan_change,), daemon=True).start()
+            threading.Thread(target=self.sample.set_pan, args=(new_pan,), daemon=True).start()
+            self.sample.play_audio()
 
 
     # Sample Changes
@@ -164,16 +165,17 @@ class SamplerApp(tk.Tk):
             pitch_change = new_pitch - self.last_pitch_value
             self.last_pitch_value = new_pitch
             threading.Thread(target=self.sample.set_pitch, args=(pitch_change,), daemon=True).start()
+            self.sample.play_audio()
 
     def changes_helper(self):
         bit_depth = self.bit_depth_slider.get()
         sample_rate = self.sample_rate_slider.get()
-        time.sleep(0.1)
         self.sample.lower_bd(bit_depth)
         time.sleep(0.1)
         self.sample.lower_sr(sample_rate)
-        self.stop_audio()
-        self.play_audio()
+        time.sleep(0.1)
+        self.sample.play_audio()
+
 
 
 app = SamplerApp()
