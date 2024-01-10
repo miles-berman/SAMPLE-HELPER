@@ -42,6 +42,9 @@ class SamplerApp(tk.Tk):
         self.load_button = tk.Button(self.left_panel, text="Load Audio File", command=self.load_audio)
         self.load_button.pack(pady=10)
 
+        self.save_button = tk.Button(self.left_panel, text="Save Audio File", command=self.save_audio)
+        self.save_button.pack(pady=10)
+
         # Play & Stop
         self.play_button = tk.Button(self.left_panel, text="Play", command=self.play_audio)
         self.play_button.pack(pady=5)
@@ -106,10 +109,20 @@ class SamplerApp(tk.Tk):
     def load_audio(self):
         if self.sample:
             self.sample.stop_audio()
-        file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")])
+        file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3 *.m4a")])
         if file_path:
             self.sample = Sample(file_path)
             self.reset_UI()
+
+    # Save
+    def save_audio(self):
+        if self.sample and self.sample.audio:
+            save_path = filedialog.asksaveasfilename(defaultextension=".wav", filetypes=[("WAV files", "*.wav"), ("MP3 files", "*.mp3")])
+            if save_path:
+                threading.Thread(target=self.sample.save_audio, args=(save_path,), daemon=True).start()
+        else:
+            tk.messagebox.showinfo("No Audio", "No audio loaded to save.")
+
             
 
     # Playback
