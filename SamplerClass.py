@@ -21,6 +21,7 @@ class Sample:
     def __init__(self, file_path):
         self.original_audio = None  # original, unaltered audio
         self.preMix_audio = None    # effected audio (pre-gain)
+        self.preBal_audio = None    # effected audio (post-gain, pre-balance)
         self.audio = None           # currently modified audio
 
         self.file_path = file_path
@@ -87,6 +88,7 @@ class Sample:
     # Stores effected audio for non-destructive volume & panning
     def update_audio(self):
         self.preMix_audio = self.audio
+        self.preBal_audio = self.audio
             
     def save_audio(self, save_path):
         if self.audio:
@@ -137,17 +139,15 @@ class Sample:
     # Sets volume to given db level
     def set_volume(self, gain_db):
         if self.preMix_audio:
-            self.audio = self.preMix_audio
-            self.audio += gain_db
+            self.audio = self.preMix_audio + gain_db
+            self.preBal_audio = self.audio
 
 
     # set_pan
     # Sets pan by decreasing opposite channel volume. 
     def set_pan(self, pan):
-        print("X")
-        if self.preMix_audio and self.preMix_audio.channels == 2:
-            self.audio = self.preMix_audio
-            left, right = self.audio.split_to_mono()
+        if self.preBal_audio and self.preBal_audio.channels == 2:
+            left, right = self.preBal_audio.split_to_mono()
             
             # Pan range: -1.0 (full left) to 1.0 (full right)
             if pan < 0:  # Pan left
@@ -193,5 +193,8 @@ class Sample:
         shifted_audio = self.audio._spawn(self.audio.raw_data, overrides={'frame_rate': new_sr})
         self.audio = shifted_audio.set_frame_rate(self.audio.frame_rate)
         self.update_audio()
+
+    # def distort(self, gain):
+    #     if self.preMix_audio:
 
 
