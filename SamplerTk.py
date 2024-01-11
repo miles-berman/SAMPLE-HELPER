@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from tkinter import filedialog, LabelFrame
-from SamplerClass import Sample 
+from SampleClass import Sample 
 import threading
 import time
 
@@ -95,9 +95,9 @@ class SamplerApp(tk.Tk):
 
     def reset_UI(self):
         # update track info label if a file is loaded
-        if self.sample and self.sample.file_path:
-            file_path = self.sample.file_path
-            self.track_info_label.config(text=f"{file_path.split('/')[-1]}\nSample Rate: {self.sample.sr} Hz\nLength: {self.sample.length_seconds} seconds\nChannels: {self.sample.channels}")
+        if self.sample and self.sample.path:
+            path = self.sample.path
+            self.track_info_label.config(text=f"{path.split('/')[-1]}\nSample Rate: {self.sample.sample_rate} Hz\nLength: {self.sample.length} seconds\nChannels: {self.sample.channels}")
         else:
             self.track_info_label.config(text="No file loaded")
 
@@ -115,7 +115,7 @@ class SamplerApp(tk.Tk):
 
     def update_loop_sliders(self):
         if self.sample:
-            max_length_ms = int(self.sample.length_seconds * 1000)
+            max_length_ms = int(self.sample.length * 1000)
             self.loop_start_slider.config(to=max_length_ms)
             self.loop_end_slider.config(to=max_length_ms)
 
@@ -132,6 +132,7 @@ class SamplerApp(tk.Tk):
         file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3 *.m4a")])
         if file_path:
             self.sample = Sample(file_path)
+            time.sleep(1)
             self.reset_UI()
             self.update_loop_sliders()
 
@@ -168,15 +169,19 @@ class SamplerApp(tk.Tk):
         volume = self.volume_slider.get()
         pan = self.pan_slider.get()
 
-        self.sample.lower_bd(bit_depth)
+        volume = 10 ** (volume / 20)
+
+        self.sample.stop_audio()
+        time.sleep(0.1)
+        self.sample.change_bit_depth(bit_depth)
         time.sleep(0.01)
-        self.sample.lower_sr(sample_rate)
+        self.sample.change_sample_rate(sample_rate)
         time.sleep(0.01)
-        self.sample.set_pitch(pitch_change)
+        self.sample.change_pitch(pitch_change)
         time.sleep(0.01)
-        self.sample.set_volume(volume)
+        self.sample.change_volume(volume)
         time.sleep(0.01)
-        self.sample.set_pan(pan)
+        self.sample.change_pan(pan)
         time.sleep(0.01)
         self.sample.play_audio()
 
