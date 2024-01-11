@@ -1,6 +1,6 @@
 # SMPL-HLPR
-A python "sampler" to change bit depth, sample rate, and pitch of audio files. 
-The app allows users to load audio files (WAV, MP3, & M4A), and manipulate the audio in real-time. Users can adjust the bit depth, sample rate, and pitch of the audio, and apply these changes on the fly.
+A python "sampler" to change bit depth, sample rate, and pitch of WAV, MP3, & M4A files. 
+The app allows users to load files and manipulate the audio in real-time. Users can adjust the bit depth, sample rate, and pitch of the audio, and apply these changes on the fly.
 
 ## Features
 
