@@ -15,12 +15,12 @@ The app allows users to load files and manipulate the audio in real-time. Users 
 
 ## Prerequisites
 
-Before running the Python Audio Sampler, you need to have Python installed on your system. The app also depends on some Python libraries such as `tkinter` for the GUI, `pydub` for audio manipulation, and `simpleaudio` for audio playback.
+Before running the Python Audio Sampler, you need to have Python installed on your system. The app also depends on some Python libraries such as `tkinter` for the GUI, `miniaudio` for file reading, and `sounddevice` for audio playback.
 
 You can install the required libraries using pip:
 
 ```bash
-pip install pydub simpleaudio numpy
+pip install numpy audioread miniaudio sounddevice
 ```
 
 ## Quick Start
