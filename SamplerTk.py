@@ -15,7 +15,7 @@ class SamplerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("SMPL-HLPR")
-        self.geometry("600x500")
+        self.geometry("600x600")
         self.resizable(False, False)  # prevent window from being resizable
 
         self.sample = None
@@ -76,9 +76,22 @@ class SamplerApp(tk.Tk):
         # Bind sliders
         self.bit_depth_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
         self.sample_rate_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
-        self.pitch_slider.bind("<ButtonRelease-1>", lambda event: self.apply_pitch_change())
-        self.volume_slider.bind("<ButtonRelease-1>", lambda event: self.apply_volume_change())
-        self.pan_slider.bind("<ButtonRelease-1>", lambda event: self.apply_pan_change())
+        self.pitch_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
+        self.volume_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
+        self.pan_slider.bind("<ButtonRelease-1>", lambda event: self.apply_changes())
+
+        # LOOPER
+        self.loop_start_slider = tk.Scale(self.left_panel, from_=0, to=10000, orient=tk.HORIZONTAL, label="Loop Start (ms)")
+        self.loop_start_slider.pack(pady=5)
+
+        self.loop_end_slider = tk.Scale(self.left_panel, from_=0, to=10000, orient=tk.HORIZONTAL, label="Loop End (ms)")
+        self.loop_end_slider.pack(pady=5)
+
+        self.loop_count_slider = tk.Scale(self.left_panel, from_=0, to=10, orient=tk.HORIZONTAL, label="Loop Count (0 for infinite)")
+        self.loop_count_slider.pack(pady=5)
+
+        self.set_loop_button = tk.Button(self.left_panel, text="Set Loop", command=self.set_loop)
+        self.set_loop_button.pack(pady=10)
 
     def reset_UI(self):
         # update track info label if a file is loaded
@@ -100,6 +113,13 @@ class SamplerApp(tk.Tk):
         self.last_volume_value = 0
         self.last_pan_value = 0
 
+    def update_loop_sliders(self):
+        if self.sample:
+            max_length_ms = int(self.sample.length_seconds * 1000)
+            self.loop_start_slider.config(to=max_length_ms)
+            self.loop_end_slider.config(to=max_length_ms)
+
+
 
 #----------------
 # Backend
@@ -113,6 +133,7 @@ class SamplerApp(tk.Tk):
         if file_path:
             self.sample = Sample(file_path)
             self.reset_UI()
+            self.update_loop_sliders()
 
     # Save
     def save_audio(self):
@@ -133,48 +154,46 @@ class SamplerApp(tk.Tk):
     def stop_audio(self):
         if self.sample:
             self.sample.stop_audio()
-        
-
-    # Volume Change
-    def apply_volume_change(self):
-        if self.sample:
-            new_volume = self.volume_slider.get()
-            self.last_volume_value = new_volume  # update last volume value
-            threading.Thread(target=self.sample.set_volume, args=(new_volume,), daemon=True).start()
-            self.sample.play_audio()
-
-
-    # Pan Change
-    def apply_pan_change(self):
-        if self.sample:
-            new_pan = self.pan_slider.get()
-            self.last_pan_value = new_pan  # update last pan value
-            threading.Thread(target=self.sample.set_pan, args=(new_pan,), daemon=True).start()
-            self.sample.play_audio()
-
 
     # Sample Changes
     def apply_changes(self):
         if self.sample:
             threading.Thread(target=self.changes_helper, daemon=True).start()
 
-    def apply_pitch_change(self):
-        time.sleep(0.1)
-        if self.sample:
-            new_pitch = self.pitch_slider.get()
-            pitch_change = new_pitch - self.last_pitch_value
-            self.last_pitch_value = new_pitch
-            threading.Thread(target=self.sample.set_pitch, args=(pitch_change,), daemon=True).start()
-            self.sample.play_audio()
 
     def changes_helper(self):
         bit_depth = self.bit_depth_slider.get()
         sample_rate = self.sample_rate_slider.get()
+        pitch_change = self.pitch_slider.get()
+        volume = self.volume_slider.get()
+        pan = self.pan_slider.get()
+
         self.sample.lower_bd(bit_depth)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.sample.lower_sr(sample_rate)
-        time.sleep(0.1)
+        time.sleep(0.01)
+        self.sample.set_pitch(pitch_change)
+        time.sleep(0.01)
+        self.sample.set_volume(volume)
+        time.sleep(0.01)
+        self.sample.set_pan(pan)
+        time.sleep(0.01)
         self.sample.play_audio()
+
+    def set_loop(self):
+        if self.sample:
+            loop_start = self.loop_start_slider.get()
+            loop_end = self.loop_end_slider.get()
+            loop_count = self.loop_count_slider.get()
+
+            if loop_end <= loop_start:
+                tk.messagebox.showwarning("Invalid Loop Range", "Loop end must be greater than loop start.")
+                return
+
+            self.sample.set_loop(loop_start, loop_end, loop_count)
+            time.sleep(0.01)
+            self.sample.play_audio()
+
 
 
 

@@ -31,9 +31,14 @@ class Sample:
 
         self.play_obj = None # playback instance
         self.play_thread = None
+        self.playing = False  # Flag to control playback
         self.read_audio()
 
         self.err = None # error handler 
+
+        self.loop_start = 0  # Start time of loop in milliseconds
+        self.loop_end = None  # End time of loop in milliseconds
+        self.loop_count = 0  # Number of times to loop, 0 for indefinite
 
 #-----------------
 # Load & Save
@@ -61,6 +66,7 @@ class Sample:
 
         self.audio = self.original_audio
         self.preMix_audio = self.audio
+        self.preBal_audio = self.audio
 
         self.sr = self.audio.frame_rate
         self.length_seconds = len(self.audio) / 1000.0
@@ -108,32 +114,72 @@ class Sample:
     # play_audio
     # Stops audio then plays from beginning
     def play_audio(self):
-        self.stop_audio()  
+        if self.playing:
+            self.stop_audio()
+        time.sleep(0.1)
+        self.playing = True
         self.play_thread = threading.Thread(target=self._play_audio_thread)
         self.play_thread.start()
 
     # stop_audio
     # Stops play thread completely
     def stop_audio(self):
-        if self.play_obj and self.play_obj.is_playing():
-            self.play_obj.stop()
-        if self.play_thread and self.play_thread.is_alive():
-            self.play_thread.join()
-
+        if self.playing:
+            self.playing = False
+            if self.play_obj:
+                self.play_obj.stop()
 
     # _play_audio_thread
     # Private thread for audio playback
     def _play_audio_thread(self):
-        audio_data = np.array(self.audio.get_array_of_samples())
-        
-        if self.audio.sample_width == 2:
-            audio_data = audio_data.astype(np.int16)
-        elif self.audio.sample_width == 4:
-            audio_data = audio_data.astype(np.int32)
+        loop_count = self.loop_count or float('inf')
 
-        audio_frames = audio_data.tobytes()
-        self.play_obj = sa.play_buffer(audio_frames, self.audio.channels, 2, self.sr)  # Using 2 bytes per sample for playback
-        self.play_obj.wait_done()
+        # loop (always triggered, whole song = long loop)
+        while loop_count > 0 and self.playing:
+            if self.loop_end:
+                loop_segment = self.audio[self.loop_start:self.loop_end]
+            else:
+                loop_segment = self.audio[self.loop_start:]
+            loop_segment_data = self._prepare_segment_data(loop_segment)
+
+            self._play_preprocessed_segment(loop_segment_data, loop_segment.sample_width, loop_segment.channels)
+            loop_count -= 1
+
+        # play remaining audio if necessary
+        if self.loop_end and self.loop_end < len(self.audio) and self.playing:
+            remaining_audio = self.audio[self.loop_end:]
+            remaining_audio_data = self._prepare_segment_data(remaining_audio)
+            self._play_preprocessed_segment(remaining_audio_data, remaining_audio.sample_width, remaining_audio.channels)
+
+        self.playing = False
+
+    # _prepare_segment_data
+    # Helper function to prepare segment data for playback
+    def _prepare_segment_data(self, segment):
+        segment_data = np.array(segment.get_array_of_samples())
+        if segment.sample_width == 2:
+            segment_data = segment_data.astype(np.int16)
+        elif segment.sample_width == 4:
+            segment_data = segment_data.astype(np.int32)
+        return segment_data.tobytes()
+
+    # _play_preprocessed_segment
+    # Helper function to play preprocessed segment
+    def _play_preprocessed_segment(self, segment_data, sample_width, channels):
+        self.play_obj = sa.play_buffer(segment_data, channels, sample_width, self.sr)
+
+        while self.play_obj.is_playing():
+            if not self.playing: 
+                self.play_obj.stop()
+                break
+            time.sleep(0.1)  # check every 100 ms
+
+    # set_loop
+    # set loop positions & count
+    def set_loop(self, start, end, count=0):
+        self.loop_start = start
+        self.loop_end = end
+        self.loop_count = count
 
     # set_volume
     # Sets volume to given db level
@@ -194,7 +240,11 @@ class Sample:
         self.audio = shifted_audio.set_frame_rate(self.audio.frame_rate)
         self.update_audio()
 
-    # def distort(self, gain):
-    #     if self.preMix_audio:
-
-
+    # distort
+    # Distortion effect achieved by simply raising then lowering gain by the same amount
+    def distort(self, gain):
+        up = gain*3+gain
+        down = gain*2
+        if self.preMix_audio:
+            distorted_audio = self.preMix_audio + up
+            self.audio = distorted_audio - down
