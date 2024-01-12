@@ -37,7 +37,6 @@ Before running the Python Audio Sampler, you need to have Python installed on yo
 3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
-   pip install -r requirements.txt
 4. **Run the Application**:
 - To run the GUI version:
   ```
