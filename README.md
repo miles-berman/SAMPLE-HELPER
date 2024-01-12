@@ -43,7 +43,7 @@ Before running the Python Audio Sampler, you need to have Python installed on yo
   ```
   python SamplerTk.py
   ```
-- To run the command line version, copy it to src and use:
+- To run the command line test, copy it to src and use:
   ```
   python main.py <audio_file_path>
   ```
