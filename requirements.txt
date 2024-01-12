@@ -1,0 +1,7 @@
+audioread==3.0.1
+cffi==1.16.0
+miniaudio==1.59
+numpy==1.26.3
+pycparser==2.21
+scipy==1.11.4
+sounddevice==0.4.6
