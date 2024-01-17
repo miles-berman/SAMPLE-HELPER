@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from scipy.signal import resample
+import wave
 
 import audioread
 import miniaudio
@@ -21,6 +22,11 @@ class Sample:
 
         self.read_audio()
 
+
+#---------------
+# Playback
+#---------------
+
     # play_audio
     # Play audio from a numpy array using sounddevice
     def play_audio(self, blocking=True):
@@ -35,6 +41,11 @@ class Sample:
         self.audio_array = np.copy(self.original_array)
         self.sample_rate = self.original_sample_rate
 
+
+#---------------
+# Read & Save
+#---------------
+
     # read_audio
     # Reads an audio file (MP3 or WAV) using miniaudio and converts it to a numpy array.
     def read_audio(self):
@@ -46,6 +57,11 @@ class Sample:
             audio_data = miniaudio.wav_read_file_f32(self.path)
             self.audio_array = np.array(audio_data.samples, dtype=np.float32)
             self.sample_rate = audio_data.sample_rate
+            with wave.open(self.path, 'rb') as wav_file:
+                if wav_file.getsampwidth() == 3:
+                    print("3-----------------")
+                    #self.change_pitch(12)
+
         elif self.path.endswith('.m4a'):
             with audioread.audio_open(self.path) as f:
                 self.sample_rate = f.samplerate
@@ -67,24 +83,34 @@ class Sample:
         else:
             raise ValueError("Unsupported file format. Supported formats are MP3, WAV, and M4A.")
 
+        self.change_pitch(12)
         self.original_array = np.copy(self.audio_array)
         self.original_sample_rate = self.sample_rate
 
     # save_audio
     # Saves the modified audio data to a WAV file.
     def save_audio(self, output_path):
-        if self.audio_array is not None:
-            with wave.open(output_path, 'wb') as wav_file:
-                n_channels = 2 if (self.audio_array.ndim > 1 and self.audio_array.shape[1] == 2) else 1
-                sampwidth = self.audio_array.dtype.itemsize
-                n_frames = self.audio_array.shape[0]
-
-                wav_file.setnchannels(n_channels)
-                wav_file.setsampwidth(sampwidth)
-                wav_file.setframerate(self.sample_rate)
-                wav_file.writeframes(self.audio_array.tobytes())
-        else:
+        if self.audio_array is None:
             raise ValueError("Audio data is empty. Nothing to save.")
+
+        # Assuming the audio array is in floating point format (-1.0 to 1.0)
+        # Convert it to 16-bit PCM format (int16) for WAV file
+        pcm_data = np.int16(self.audio_array * 32767)  # Scale to int16 range
+
+        with wave.open(output_path, 'wb') as wav_file:
+            n_channels = 2 if (pcm_data.ndim > 1 and pcm_data.shape[1] == 2) else 1
+            sampwidth = 2  # 2 bytes for 16-bit audio
+            n_frames = pcm_data.shape[0]
+
+            wav_file.setnchannels(n_channels)
+            wav_file.setsampwidth(sampwidth)
+            wav_file.setframerate(self.sample_rate)
+            wav_file.writeframes(pcm_data.tobytes())
+
+
+#---------------
+# Effects!
+#---------------
 
     # change_bit_depth
     # Change the bit depth of the audio data to a value between 1 and 16 bits.
@@ -131,7 +157,6 @@ class Sample:
 
         self.audio_array[:, 0] *= left_gain
         self.audio_array[:, 1] *= right_gain
-
 
 
 
